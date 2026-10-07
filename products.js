@@ -7,13 +7,13 @@ const CONFIG = {
   slideMs: 2000,          // product/tile photos har 2 second me badlengi
   heroMs: 4500,           // top banner slider speed
   rootFolder: "1L-0suSqFlLoCzJ_-HBBTau5Q72yQTNQk",   // Evermine Drive main folder
-  driveApiKey: ""         // Google Drive API key (README me steps). Khali = neeche ITEMS list use hogi
+  driveApiKey: "AIzaSyAfEZAIr_-bPWQwAwvFUaGQ7DGNvX0tvRI"         // Google Drive API key (README me steps). Khali = neeche ITEMS list use hogi
 };
 
 /* Main Drive folder (rootFolder) ke andar ye sub-folders banao: Rings, Earrings, Pendants & Necklaces,
    Bangles & Bracelets, Banner, Films. Website naam se apne aap dhundh leti hai (match). */
 const CATEGORIES = [
-  { slug:"rings",              title:"Rings",                match:"\bring", folder:"", cover:"" },
+  { slug:"rings",              title:"Rings",                match:"^ring", folder:"", cover:"" },
   { slug:"earrings",           title:"Earrings",             match:"earring", folder:"", cover:"" },
   { slug:"pendants-necklaces", title:"Pendants & Necklaces", match:"pendant|necklace", folder:"", cover:"" },
   { slug:"bangles-bracelets",  title:"Bangles & Bracelets",  match:"bangle|bracelet", folder:"", cover:"" }
