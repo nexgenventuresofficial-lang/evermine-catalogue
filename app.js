@@ -26,19 +26,19 @@ $("#nav").innerHTML = [...CATEGORIES.map(c => `<a href="#/c/${c.slug}">${c.title
 
 /* data: Drive folder (auto) ya manual list */
 const DATA = {}; let DRIVE_ERR = false;
-const manual = slug => ITEMS.filter(p => p.cat === slug).map(p => ({ id:p.id, name:p.name, tag:p.tag, desc:p.desc, spec:p.spec||[],
+const manual = slug => ITEMS.filter(p => p.cat === slug).map(p => ({ id:p.id, code:p.id, name:p.name, tag:p.tag, desc:p.desc, spec:p.spec||[],
   media:[...(p.images||[]).filter(Boolean).map(s => ({t:"i",src:s})), ...(p.video ? [{t:"v",src:p.video}] : [])] }));
 const list = async id => {
   const q = encodeURIComponent(`'${id}' in parents and trashed=false`);
   const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,mimeType)&pageSize=300&orderBy=name&key=${CONFIG.driveApiKey}`);
   if (!r.ok) throw new Error("drive"); return (await r.json()).files;
 };
-const parse = files => { const m = new Map();          // file name: "R-101 - Solitaire Ring.jpg"  (2nd photo: "... (2).jpg")
+const parse = files => { const m = new Map();          // har photo/video ka file name hi design ka naam banta hai
   files.filter(f => /^(image|video)\//.test(f.mimeType)).forEach(f => {
-    const base = f.name.replace(/\.[^.]+$/,"").replace(/\s*\(\d+\)$/,"");
-    const [id, ...rest] = base.split(/\s+-\s+/); const k = id.trim();
-    const it = m.get(k) || { id:k, name:rest.join(" - ") || k, spec:[], media:[] };
-    it.media.push({ t: f.mimeType.startsWith("video") ? "v" : "i", src:f.id }); m.set(k, it); });
+    const base = f.name.replace(/\.[^.]+$/,"").replace(/\s*\(\d+\)$/,"").trim();   // "(2)" wali photo same design me judti hai
+    const parts = base.split(/\s+-\s+/);                                          // optional: "R-101 - Naam" => code + naam
+    const it = m.get(base) || { id:base, code: parts.length > 1 ? parts[0].trim() : "", name: (parts.length > 1 ? parts.slice(1).join(" - ") : base).replace(/_/g," "), spec:[], media:[] };
+    it.media.push({ t: f.mimeType.startsWith("video") ? "v" : "i", src:f.id }); m.set(base, it); });
   return [...m.values()]; };
 async function load(){
   if (!CONFIG.driveApiKey){ CATEGORIES.forEach(c => DATA[c.slug] = manual(c.slug)); return; }
@@ -71,7 +71,12 @@ function home(){
     <p class="kicker">Evermine Atelier</p><h2>Our craft is our pride.</h2>
     <p>Every piece is designed and finished by hand in Surat, the diamond capital of India.</p>
     <a class="btn-line" href="${wa("Hello Evermine Jewels, I would like to talk to your designers.")}" target="_blank" rel="noopener">Talk to our designers</a></section>`;
-  run($(".hero-bg"), CONFIG.heroMs, ".slide");
+  const sl = [...document.querySelectorAll(".hero-bg .slide")];
+  if (sl.length > 1){ const dots = document.createElement("div"); dots.className = "dots";
+    dots.innerHTML = sl.map((_,i) => `<i class="${i?"":"on"}"></i>`).join(""); $("#top").appendChild(dots); let n = 0;
+    const t = setInterval(() => { if (!document.body.contains(dots)) return clearInterval(t);
+      sl[n].classList.remove("on"); dots.children[n].classList.remove("on"); n = (n+1) % sl.length;
+      sl[n].classList.add("on"); dots.children[n].classList.add("on"); }, CONFIG.heroMs); }
   document.querySelectorAll(".tile").forEach(t => run(t, CONFIG.slideMs));
 }
 
@@ -80,12 +85,12 @@ function category(slug){
   const items = DATA[slug] || [];
   $("#view").innerHTML = `<section class="sec page"><p class="crumb"><a href="#/">Home</a> &nbsp;/&nbsp; ${c.title}</p><h2>${c.title}</h2>
     <p class="count">${items.length} designs</p>${DRIVE_ERR ? `<p class="count">Drive se load nahi hua, saved list dikha rahe hain.</p>` : ""}
-    <div class="tools"><input id="search" type="search" placeholder="Search by ID or name" aria-label="Search"></div>
+    <div class="tools"><input id="search" type="search" placeholder="Search designs" aria-label="Search"></div>
     <div class="grid" id="grid"></div><p class="empty" id="empty" hidden>No designs found.</p></section>`;
   const draw = q => {
-    const l = items.filter(i => (i.id + i.name).toLowerCase().includes(q));
+    const l = items.filter(i => (i.code + " " + i.name).toLowerCase().includes(q));
     $("#grid").innerHTML = l.map(i => `<article class="card reveal" tabindex="0" data-id="${i.id}"><div class="thumb">${i.tag ? `<span class="badge">${i.tag}</span>` : ""}${slides(i.media.filter(m => m.t==="i").map(m => m.src))}</div>
-      <h3>${i.name}</h3><p class="pid">ID · ${i.id}</p></article>`).join("");
+      <h3>${i.name}</h3>${i.code ? `<p class="pid">ID · ${i.code}</p>` : ""}</article>`).join("");
     $("#empty").hidden = l.length > 0;
     document.querySelectorAll(".thumb").forEach(t => run(t, CONFIG.slideMs)); reveal();
   };
@@ -107,9 +112,9 @@ function openModal(p){
   show(p.media[0]);
   $("#mThumbs").innerHTML = p.media.length > 1 ? p.media.map((m,i) => `<button data-i="${i}">${m.t==="v" ? "Video" : "Photo " + (i+1)}</button>`).join("") : "";
   $("#mThumbs").onclick = e => e.target.dataset.i && show(p.media[+e.target.dataset.i]);
-  $("#mCat").textContent = "ID · " + p.id; $("#mTitle").textContent = p.name;
+  $("#mCat").textContent = p.code ? "ID · " + p.code : "Evermine Jewels"; $("#mTitle").textContent = p.name;
   $("#mDesc").textContent = p.desc || ""; $("#mSpec").innerHTML = (p.spec||[]).map(s => `<li>${s}</li>`).join("");
-  $("#mWa").href = wa(`Hello Evermine Jewels, I am interested in ${p.name} (ID: ${p.id}). Please share details.`);
+  $("#mWa").href = wa(`Hello Evermine Jewels, I am interested in ${p.name}${p.code ? " (ID: " + p.code + ")" : ""}. Please share details.`);
   $("#modal").hidden = false; document.body.style.overflow = "hidden"; $("#mClose").focus();
 }
 function closeModal(){ $("#modal").hidden = true; $("#mStage").innerHTML = ""; document.body.style.overflow = ""; }
