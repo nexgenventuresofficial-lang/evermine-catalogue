@@ -86,3 +86,5 @@ figcaption{margin-top:10px;text-align:center;font-size:20px;color:var(--maroon)}
 .tile small{display:block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;margin-top:4px;opacity:.85}
 .tile .sl,.tile .ph{z-index:0}.tile::after{z-index:1}
 @media (prefers-reduced-motion:reduce){.slide.on img,.ph,.ph svg{animation:none}.reveal{opacity:1;transform:none}}
+.logo:focus,.logo:focus-visible{outline:none}
+.dots{position:absolute;left:5vw;bottom:28px;display:flex;gap:8px;z-index:2}.dots i{width:32px;height:2px;background:rgba(255,255,255,.4);transition:.4s}.dots i.on{background:var(--gold);width:48px}
